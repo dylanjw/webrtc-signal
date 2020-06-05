@@ -49,7 +49,7 @@ async def websocket_handle(request):
                     pass
 
                 LOGGED_IN[login] = talk_fn
-                session_data['login'] = user_send_fn
+                session_data['login'] = login
                 await ws.send_json({"status":"success"})
 
             if action == 'get_user_list':
@@ -68,12 +68,15 @@ async def websocket_handle(request):
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':
-                LOGGED_IN[session_data["login"]] = user_send_fn
+                LOGGED_IN[session_data["login"]] = talk_fn
                 await ws.close()
             else:
                 await handle_ws_msg(msg.json())
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            LOGGED_IN = dissoc(LOGGED_IN, session_data["login"])
+            try:
+                del LOGGED_IN[session_data["login"]]
+            except KeyError:
+                pass
             print('ws connection closed with exception %s' %
                   ws.exception())
 
