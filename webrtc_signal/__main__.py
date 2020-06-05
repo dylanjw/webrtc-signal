@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description="aiohttp server example")
 parser.add_argument('--path')
 parser.add_argument('--port')
 
-LOGGED_IN = set()
+LOGGED_IN = dict()
 
 
 def init_session_data():
@@ -20,8 +20,18 @@ async def websocket_handle(request):
 
     session_data = init_session_data()
 
-    async def handle_ws_msg(ws, msg_json):
+    ws = web.WebSocketResponse(autoping=True, heartbeat=15)
+    await ws.prepare(request)
+
+
+    async def talk_fn(data):
+        nonlocal ws
+        await ws.send_json(data)
+
+
+    async def handle_ws_msg(msg_json):
         nonlocal session_data
+        nonlocal ws
         global LOGGED_IN
 
         if 'action' in msg_json:
@@ -34,12 +44,12 @@ async def websocket_handle(request):
 
                 # logout if previously logged in
                 try:
-                    LOGGED_IN.remove(session_data['login'])
+                    del LOGGED_IN[session_data['login']]
                 except KeyError:
                     pass
 
-                LOGGED_IN.add(login)
-                session_data['login'] = login
+                LOGGED_IN[login] = talk_fn
+                session_data['login'] = user_send_fn
                 await ws.send_json({"status":"success"})
 
             if action == 'get_user_list':
@@ -47,20 +57,23 @@ async def websocket_handle(request):
                     "status":"success",
                     "data":f"{list(LOGGED_IN)}"
                 })
+            if action == 'talk':
+                target = msg_json['data']
+                _talk = LOGGED_IN.get(target)
+                if _talk is not None:
+                    _talk({"data": "Hi"})
 
 
-    ws = web.WebSocketResponse(autoping=True, heartbeat=15)
-    await ws.prepare(request)
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':
-                LOGGED_IN.remove(session_data["login"])
+                LOGGED_IN[session_data["login"]] = user_send_fn
                 await ws.close()
             else:
                 await handle_ws_msg(ws, msg.json())
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            LOGGED_IN.remove(session_data["login"])
+            LOGGED_IN = dissoc(LOGGED_IN, session_data["login"])
             print('ws connection closed with exception %s' %
                   ws.exception())
 
