@@ -29,19 +29,30 @@ async def websocket_handle(request):
             if action == 'login':
                 login = msg_json['data']
                 if login in LOGGED_IN:
-                    ws.send_str("That login is taken. Try another")
+                    await ws.send_json({"status":"error", "reason":"That login is taken. Try another"})
                     return
+
+                # logout if previously logged in
+                try:
+                    LOGGED_IN.remove(session_data['login'])
+                except KeyError:
+                    pass
 
                 LOGGED_IN.add(login)
                 session_data['login'] = login
-                ws.send_str(f"Logged in as: {login}")
+                await ws.send_json({"status":"success"})
+
+            if action == 'get_user_list':
+                await ws.send_json({
+                    "status":"success",
+                    "data":f"{list(LOGGED_IN)}"
+                })
 
 
-    ws = web.WebSocketResponse()
+    ws = web.WebSocketResponse(autoping=True, heartbeat=15)
     await ws.prepare(request)
 
     async for msg in ws:
-        print(msg)
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':
                 LOGGED_IN.remove(session_data["login"])
