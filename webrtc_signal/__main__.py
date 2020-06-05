@@ -71,7 +71,7 @@ async def websocket_handle(request):
                 LOGGED_IN[session_data["login"]] = user_send_fn
                 await ws.close()
             else:
-                await handle_ws_msg(ws, msg.json())
+                await handle_ws_msg(msg.json())
         elif msg.type == aiohttp.WSMsgType.ERROR:
             LOGGED_IN = dissoc(LOGGED_IN, session_data["login"])
             print('ws connection closed with exception %s' %
