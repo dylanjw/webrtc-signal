@@ -12,7 +12,7 @@ parser.add_argument('--port')
 LOGGED_IN = set()
 
 
-def init_session_data(data):
+def init_session_data():
     return {"login": None}
 
 
