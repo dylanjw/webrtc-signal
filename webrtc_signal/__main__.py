@@ -61,7 +61,7 @@ async def websocket_handle(request):
                 target = msg_json['data']
                 _talk = LOGGED_IN.get(target)
                 if _talk is not None:
-                    _talk({"data": "Hi"})
+                    await _talk({"data": "Hi"})
 
 
 
