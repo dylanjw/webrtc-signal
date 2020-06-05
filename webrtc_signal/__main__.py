@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 from aiohttp import web
+import aiohttp
+import socket
+import os
 
 parser = argparse.ArgumentParser(description="aiohttp server example")
 parser.add_argument('--path')
@@ -12,6 +15,7 @@ async def websocket_handle(request):
     await ws.prepare(request)
 
     async for msg in ws:
+        print(msg)
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':
                 await ws.close()
@@ -25,8 +29,18 @@ async def websocket_handle(request):
 
     return ws
 
+args = parser.parse_args()
+
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+try:
+    os.unlink(args.path)
+except FileNotFoundError:
+    pass
+s.bind(args.path)
+os.chown(args.path, 33, 33)
+
 app = web.Application()
 app.add_routes([web.get('/ws', websocket_handle)])
 
-args = parser.parse_args()
-web.run_app(app, path=args.path, port=args.port)
+
+web.run_app(app, sock=s)
