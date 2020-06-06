@@ -9,6 +9,9 @@ python = "^3.8"
 aiohttp = "^3.6.2"
 aiodns = "^2.0.0"
 flake8 = "^3.8.2"
+pytest-aiohttp = "^0.3.0"
+toolz = "^0.10.0"
+attrdict = "^2.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4.3"
