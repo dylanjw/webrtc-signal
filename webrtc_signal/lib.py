@@ -75,20 +75,27 @@ def setup_ws_connection_handler(LOGGED_IN):
         session['talk_fn'] = talk_fn
         session['LOGGED_IN'] = LOGGED_IN
 
-        async for msg in ws:
-            if msg.type == aiohttp.WSMsgType.TEXT:
-                if msg.data == 'close':
-                    LOGGED_IN[session["login"]] = talk_fn
-                    await ws.close()
-                else:
-                    await handle_ws_msg(session, msg.json())
-            elif msg.type == aiohttp.WSMsgType.ERROR:
-                try:
-                    del LOGGED_IN[session["login"]]
-                except KeyError:
-                    pass
-                print(
-                    'ws connection closed with exception %s' % ws.exception())
+        try:
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    if msg.data == 'close':
+                        LOGGED_IN[session["login"]] = talk_fn
+                        await ws.close()
+                    else:
+                        await handle_ws_msg(session, msg.json())
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    try:
+                        del LOGGED_IN[session["login"]]
+                    except KeyError:
+                        pass
+                    print(
+                        'ws connection closed with exception %s' % ws.exception())
+        finally:
+            try:
+                del LOGGED_IN[session["login"]]
+            except KeyError:
+                pass
+
 
         print('websocket connection closed')
 
