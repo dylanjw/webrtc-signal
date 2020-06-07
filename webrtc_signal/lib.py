@@ -31,7 +31,7 @@ async def handle_login(session, msg):
 
     session['LOGGED_IN'][new_login] = session['talk_fn']
     session['login'] = new_login
-    await session['talk_fn']({"status": "success"})
+    await session['talk_fn']({"action":"login", "status": "success"})
 
 
 @curry
@@ -43,6 +43,7 @@ async def handle_ws_msg(session, msg):
 
         if action == 'get_user_list':
             await session['talk_fn']({
+                "action": "get_user_list",
                 "status": "success",
                 "data": list(session['LOGGED_IN']),
             })
@@ -52,6 +53,7 @@ async def handle_ws_msg(session, msg):
             talk_to_peer = session['LOGGED_IN'].get(target)
             if talk_to_peer is not None:
                 await talk_to_peer({
+                    "action": "talk",
                     "data": msg['data'],
                     "sender": session['login']
                 })
